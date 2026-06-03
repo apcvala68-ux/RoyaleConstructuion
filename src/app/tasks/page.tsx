@@ -18,14 +18,20 @@ import {
 import {
   DndContext,
   DragOverlay,
+  closestCorners,
+  KeyboardSensor,
+  PointerSensor,
   useSensor,
   useSensors,
-  PointerSensor,
-  useDroppable,
-  useDraggable,
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const PRIORITY_LABELS: Record<TaskPriority, string> = {
   urgent: 'Urgent',
@@ -189,14 +195,12 @@ function TaskCard({ task, onView, onEdit, onDelete }: TaskCardProps) {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
   const assignee = USERS.find(u => u.id === task.assignedTo);
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: task.id,
-    data: { status: task.status },
-  });
-
-  const style = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-  } : undefined;
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   React.useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -212,7 +216,9 @@ function TaskCard({ task, onView, onEdit, onDelete }: TaskCardProps) {
     <Card
       ref={setNodeRef}
       style={style}
-      className={`p-4 hover:shadow-hover transition-all duration-150 ${isDragging ? 'opacity-50 shadow-lg' : ''}`}
+      className={`p-4 cursor-grab active:cursor-grabbing transition-all duration-150 hover:shadow-hover ${isDragging ? 'opacity-50 shadow-lg' : ''}`}
+      {...attributes}
+      {...listeners}
     >
       <div className="space-y-3">
         <div className="flex items-start justify-between">
@@ -239,7 +245,7 @@ function TaskCard({ task, onView, onEdit, onDelete }: TaskCardProps) {
             )}
           </div>
         </div>
-        <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+        <div>
           <p className="text-sm font-semibold text-foreground">{task.title}</p>
           <p className="text-xs text-muted-foreground mt-1">{task.leadName}</p>
         </div>
@@ -271,15 +277,8 @@ interface ColumnProps {
 }
 
 function Column({ column, tasks, onView, onEdit, onDelete }: ColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({ id: column.status });
-
   return (
-    <div
-      ref={setNodeRef}
-      className={`kanban-column min-w-[280px] rounded-xl border p-2 transition-all duration-200 ${
-        isOver ? 'border-primary/50 bg-primary/5' : 'border-border bg-muted/30'
-      }`}
-    >
+    <div className="kanban-column min-w-[280px] rounded-xl border p-2 bg-muted/30">
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
           <column.icon className={`h-4 w-4 ${column.color}`} />
@@ -289,11 +288,13 @@ function Column({ column, tasks, onView, onEdit, onDelete }: ColumnProps) {
           </span>
         </div>
       </div>
-      <div className="space-y-3 min-h-[200px]">
-        {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} onView={onView} onEdit={onEdit} onDelete={onDelete} />
-        ))}
-      </div>
+      <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+        <div className="space-y-3 min-h-[200px]">
+          {tasks.map((task) => (
+            <TaskCard key={task.id} task={task} onView={onView} onEdit={onEdit} onDelete={onDelete} />
+          ))}
+        </div>
+      </SortableContext>
     </div>
   );
 }
@@ -315,7 +316,8 @@ export default function TasksPage() {
   React.useEffect(() => { setTasks(storeTasks); }, [storeTasks]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor)
   );
 
   const filteredTasks = tasks.filter(t => filterPriority === 'all' || t.priority === filterPriority);
@@ -329,13 +331,16 @@ export default function TasksPage() {
     const { active, over } = event;
     if (!over) return;
 
-    const taskId = active.id as string;
-    const toStatus = over.id as TaskStatus;
+    const activeTask = tasks.find(t => t.id === active.id);
+    if (!activeTask) return;
 
-    updateTaskStatus(taskId, toStatus);
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, status: toStatus } : t))
-    );
+    const overTask = tasks.find(t => t.id === over.id);
+    if (overTask && overTask.status !== activeTask.status) {
+      updateTaskStatus(activeTask.id, overTask.status);
+      setTasks((prev) =>
+        prev.map((t) => (t.id === activeTask.id ? { ...t, status: overTask.status } : t))
+      );
+    }
   };
 
   const activeTask = activeId ? tasks.find((t) => t.id === activeId) : null;
@@ -380,7 +385,12 @@ export default function TasksPage() {
         </div>
 
         {/* Kanban Board */}
-        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
           <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin">
             {COLUMNS.map((col) => {
               const columnTasks = filteredTasks.filter(t => t.status === col.status);
