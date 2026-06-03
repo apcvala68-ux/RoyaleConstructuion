@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,8 +20,9 @@ import {
 type SortField = 'companyName' | 'estimatedValue' | 'stage' | 'createdAt' | 'source';
 type SortDir = 'asc' | 'desc';
 
-export default function LeadsListPage() {
-  const [search, setSearch] = React.useState('');
+function LeadsListPage() {
+  const searchParams = useSearchParams();
+  const [search, setSearch] = React.useState(searchParams.get('search') || '');
   const [sortField, setSortField] = React.useState<SortField>('createdAt');
   const [sortDir, setSortDir] = React.useState<SortDir>('desc');
   const [filterStage, setFilterStage] = React.useState<PipelineStage | 'all'>('all');
@@ -342,5 +344,13 @@ export default function LeadsListPage() {
         </Modal>
       </div>
     </AppLayout>
+  );
+}
+
+export default function Page() {
+  return (
+    <React.Suspense fallback={<AppLayout><div className="p-6 text-muted-foreground">Loading...</div></AppLayout>}>
+      <LeadsListPage />
+    </React.Suspense>
   );
 }

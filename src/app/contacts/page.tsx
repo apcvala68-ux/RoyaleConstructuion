@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -69,7 +70,8 @@ export default function ContactsPage() {
           {filtered.map((contact) => {
             const company = companies.find(c => c.name === contact.company);
             return (
-              <Card key={contact.id} className="card-hover p-5">
+              <Link key={contact.id} href={`/leads?search=${encodeURIComponent(contact.company || contact.name)}`} className="block">
+              <Card className="card-hover p-5">
                 <div className="flex items-start gap-3">
                   <div className={`flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br text-white text-sm font-bold shrink-0 ${getGradient(contact.id)}`}>
                     {getInitials(contact.name)}
@@ -100,6 +102,7 @@ export default function ContactsPage() {
                   </div>
                 )}
               </Card>
+              </Link>
             );
           })}
         </div>

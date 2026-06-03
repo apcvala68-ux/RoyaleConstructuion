@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -58,7 +59,8 @@ export default function CompaniesPage() {
             const companyDeals = leads.filter(l => l.companyName === company.name);
             const activeDeals = companyDeals.filter(l => !['Won', 'Lost'].includes(l.stage));
             return (
-              <Card key={company.id} className="card-hover p-5">
+              <Link key={company.id} href={`/leads?search=${encodeURIComponent(company.name)}`} className="block">
+              <Card className="card-hover p-5">
                 <div className="flex items-start gap-3">
                   <div className={`flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br text-white text-sm font-bold shrink-0 ${getGradient(company.id)}`}>
                     {getInitials(company.name)}
@@ -99,6 +101,7 @@ export default function CompaniesPage() {
                   </div>
                 </div>
               </Card>
+              </Link>
             );
           })}
         </div>
