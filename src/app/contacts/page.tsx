@@ -70,7 +70,7 @@ export default function ContactsPage() {
           {filtered.map((contact) => {
             const company = companies.find(c => c.name === contact.company);
             return (
-              <Link key={contact.id} href={`/leads?search=${encodeURIComponent(contact.company || contact.name)}`} className="block">
+              <Link key={contact.id} href={`/contacts/${contact.id}`} className="block">
               <Card className="card-hover p-5">
                 <div className="flex items-start gap-3">
                   <div className={`flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br text-white text-sm font-bold shrink-0 ${getGradient(contact.id)}`}>
