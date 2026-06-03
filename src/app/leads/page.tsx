@@ -6,8 +6,11 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Modal } from '@/components/ui/modal';
+import { toast } from '@/components/ui/toast';
+import { useAppStore } from '@/stores/app';
 import { formatCurrency, formatDate, getInitials, getInlineGradient, getStageBadgeClass } from '@/lib/utils';
-import { LEADS, USERS } from '@/data';
+import { USERS } from '@/data';
 import { PIPELINE_STAGES, LEAD_SOURCES, PROJECT_TYPES, type PipelineStage } from '@/types';
 import {
   Plus, Search, Eye, Pencil, Trash2, ArrowUpDown,
@@ -26,6 +29,10 @@ export default function LeadsListPage() {
   const [page, setPage] = React.useState(1);
   const [perPage, setPerPage] = React.useState(15);
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<string | null>(null);
+
+  const LEADS = useAppStore((s) => s.leads);
+  const deleteLead = useAppStore((s) => s.deleteLead);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -249,6 +256,7 @@ export default function LeadsListPage() {
                           <Pencil className="h-4 w-4" />
                         </Link>
                         <button
+                          onClick={() => setDeleteTarget(lead.id)}
                           className="w-9 h-9 rounded-full border border-destructive/30 flex items-center justify-center bg-destructive/5 hover:bg-destructive/15 text-destructive hover:text-destructive shadow-sm transition-all duration-200 cursor-pointer"
                           title="Delete Lead"
                         >
@@ -304,6 +312,34 @@ export default function LeadsListPage() {
             </div>
           </div>
         </Card>
+
+        {/* Delete Confirmation */}
+        <Modal
+          open={!!deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          title="Delete Lead"
+        >
+          <p className="text-sm text-muted-foreground mb-4">
+            Are you sure you want to delete this lead? This action cannot be undone. All associated activities and tasks will also be removed.
+          </p>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (deleteTarget) {
+                  deleteLead(deleteTarget);
+                  setDeleteTarget(null);
+                  toast('Lead deleted successfully');
+                }
+              }}
+            >
+              Delete
+            </Button>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+              Cancel
+            </Button>
+          </div>
+        </Modal>
       </div>
     </AppLayout>
   );

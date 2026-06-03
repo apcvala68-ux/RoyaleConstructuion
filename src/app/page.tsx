@@ -145,7 +145,7 @@ export default function DashboardPage() {
               <Calendar className="h-4 w-4" />
               Last 30 days
             </Button>
-            <Button size="sm" onClick={() => router.push('/leads')}>
+            <Button size="sm" onClick={() => router.push('/leads/new')}>
               <Plus className="h-4 w-4" />
               New Lead
             </Button>

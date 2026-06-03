@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { ToastContainerWrapper } from '@/components/ui/toast-wrapper';
 
 export const metadata: Metadata = {
   title: 'Royale Construction CRM',
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen bg-background font-sans antialiased">
         {children}
+        <ToastContainerWrapper />
       </body>
     </html>
   );

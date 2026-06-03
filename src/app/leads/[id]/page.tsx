@@ -2,14 +2,17 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Modal } from '@/components/ui/modal';
+import { toast } from '@/components/ui/toast';
+import { useAppStore } from '@/stores/app';
 import { formatCurrency, formatDate, formatDateTime, timeAgo, getInitials, getGradient, getStageBadgeClass, getActivityColor } from '@/lib/utils';
-import { LEADS, USERS, getActivitiesByLead, getTasksByLead, getBidsByLead } from '@/data';
-import { PIPELINE_STAGES, type PipelineStage } from '@/types';
+import { USERS, getBidsByLead } from '@/data';
+import { PIPELINE_STAGES, type PipelineStage, type TaskPriority } from '@/types';
 import {
   ArrowLeft, Edit, Pencil, Phone, Mail, MapPin, Calendar,
   DollarSign, Building2, User, Clock, FileText, CheckSquare,
@@ -17,13 +20,60 @@ import {
 } from 'lucide-react';
 
 export default function LeadDetailPage() {
+  const router = useRouter();
   const params = useParams();
   const id = params.id as string;
-  const lead = LEADS.find(l => l.id === id);
-  const activities = getActivitiesByLead(id);
-  const tasks = getTasksByLead(id);
+  const leads = useAppStore((s) => s.leads);
+  const addActivity = useAppStore((s) => s.addActivity);
+  const addTask = useAppStore((s) => s.addTask);
+  const lead = leads.find(l => l.id === id);
+  const activities = useAppStore((s) => s.activities.filter((a) => a.leadId === id));
+  const tasks = useAppStore((s) => s.tasks.filter((t) => t.leadId === id));
   const bids = getBidsByLead(id);
   const [activeTab, setActiveTab] = React.useState<'activity' | 'documents' | 'notes' | 'bids' | 'history'>('activity');
+  const [noteModal, setNoteModal] = React.useState(false);
+  const [taskModal, setTaskModal] = React.useState(false);
+  const [callModal, setCallModal] = React.useState(false);
+  const [noteText, setNoteText] = React.useState('');
+  const [taskTitle, setTaskTitle] = React.useState('');
+  const [taskPriority, setTaskPriority] = React.useState<TaskPriority>('medium');
+  const [taskDue, setTaskDue] = React.useState('');
+  const [callDuration, setCallDuration] = React.useState(5);
+  const [callNotes, setCallNotes] = React.useState('');
+
+  const handleAddNote = () => {
+    if (!noteText.trim()) return;
+    addActivity({
+      leadId: id, leadName: lead?.companyName || '', type: 'note',
+      title: 'Note added', description: noteText, userId: 'u1', userName: 'John Doe',
+    });
+    setNoteText('');
+    setNoteModal(false);
+    toast('Note added');
+  };
+
+  const handleCreateTask = () => {
+    if (!taskTitle.trim()) return;
+    addTask({
+      leadId: id, leadName: lead?.companyName || '', title: taskTitle,
+      description: '', dueDate: taskDue || new Date().toISOString(),
+      status: 'pending', priority: taskPriority, assignedTo: 'u1',
+    });
+    setTaskTitle(''); setTaskDue(''); setTaskPriority('medium');
+    setTaskModal(false);
+    toast('Task created');
+  };
+
+  const handleLogCall = () => {
+    addActivity({
+      leadId: id, leadName: lead?.companyName || '', type: 'call',
+      title: 'Phone call', description: callNotes || 'Logged a call',
+      userId: 'u1', userName: 'John Doe', duration: callDuration,
+    });
+    setCallDuration(5); setCallNotes('');
+    setCallModal(false);
+    toast('Call logged');
+  };
 
   if (!lead) {
     return (
@@ -93,8 +143,8 @@ export default function LeadDetailPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <Button variant="outline" size="sm"><Phone className="h-4 w-4" /> Call</Button>
-                <Button variant="outline" size="sm"><Mail className="h-4 w-4" /> Email</Button>
+                <Button variant="outline" size="sm" onClick={() => { setCallNotes(''); setCallModal(true); }}><Phone className="h-4 w-4" /> Call</Button>
+                <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(lead.contactEmail); toast('Email copied to clipboard'); }}><Mail className="h-4 w-4" /> Email</Button>
                 <Link href={`/leads/${lead.id}/edit`}>
                   <Button size="sm"><Pencil className="h-4 w-4" /> Edit</Button>
                 </Link>
@@ -288,12 +338,12 @@ export default function LeadDetailPage() {
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button variant="outline" className="w-full justify-start"><PhoneCall className="h-4 w-4" /> Log Call</Button>
-                <Button variant="outline" className="w-full justify-start"><Mail className="h-4 w-4" /> Send Email</Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => { setCallNotes(''); setCallModal(true); }}><PhoneCall className="h-4 w-4" /> Log Call</Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => { navigator.clipboard.writeText(lead.contactEmail); toast('Email copied to clipboard'); }}><Mail className="h-4 w-4" /> Send Email</Button>
                 <Button variant="outline" className="w-full justify-start"><MapPin className="h-4 w-4" /> Schedule Site Visit</Button>
-                <Button variant="outline" className="w-full justify-start"><CheckSquare className="h-4 w-4" /> Create Task</Button>
-                <Button variant="outline" className="w-full justify-start"><FileText className="h-4 w-4" /> Add Note</Button>
-                <Button variant="outline" className="w-full justify-start"><ExternalLink className="h-4 w-4" /> Share Portal</Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => { setTaskTitle(''); setTaskDue(''); setTaskModal(true); }}><CheckSquare className="h-4 w-4" /> Create Task</Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => { setNoteText(''); setNoteModal(true); }}><FileText className="h-4 w-4" /> Add Note</Button>
+                <Button variant="outline" className="w-full justify-start" onClick={() => { navigator.clipboard.writeText(window.location.href); toast('Portal link copied'); }}><ExternalLink className="h-4 w-4" /> Share Portal</Button>
               </CardContent>
             </Card>
 
@@ -366,6 +416,81 @@ export default function LeadDetailPage() {
             </Card>
           </div>
         </div>
+
+        {/* Add Note Modal */}
+        <Modal open={noteModal} onClose={() => setNoteModal(false)} title="Add Note">
+          <textarea
+            rows={5}
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value)}
+            className="w-full rounded-xl border border-border bg-muted p-3 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+            placeholder="Write your note..."
+          />
+          <div className="flex items-center gap-3 mt-4">
+            <Button onClick={handleAddNote}>Save Note</Button>
+            <Button variant="outline" onClick={() => setNoteModal(false)}>Cancel</Button>
+          </div>
+        </Modal>
+
+        {/* Create Task Modal */}
+        <Modal open={taskModal} onClose={() => setTaskModal(false)} title="Create Task">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Title *</label>
+              <input
+                required
+                value={taskTitle}
+                onChange={(e) => setTaskTitle(e.target.value)}
+                className="w-full h-10 px-3 text-sm rounded-xl border border-border bg-muted text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="Task title"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Priority</label>
+              <select value={taskPriority} onChange={(e) => setTaskPriority(e.target.value as TaskPriority)}
+                className="w-full h-10 px-3 text-sm rounded-xl border border-border bg-muted text-foreground focus:outline-none focus:ring-1 focus:ring-primary">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Due Date</label>
+              <input type="date" value={taskDue} onChange={(e) => setTaskDue(e.target.value)}
+                className="w-full h-10 px-3 text-sm rounded-xl border border-border bg-muted text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+            </div>
+          </div>
+          <div className="flex items-center gap-3 mt-4">
+            <Button onClick={handleCreateTask}>Create Task</Button>
+            <Button variant="outline" onClick={() => setTaskModal(false)}>Cancel</Button>
+          </div>
+        </Modal>
+
+        {/* Log Call Modal */}
+        <Modal open={callModal} onClose={() => setCallModal(false)} title="Log Call">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Duration (minutes)</label>
+              <input type="number" min={1} value={callDuration} onChange={(e) => setCallDuration(Number(e.target.value))}
+                className="w-full h-10 px-3 text-sm rounded-xl border border-border bg-muted text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Notes</label>
+              <textarea
+                rows={3}
+                value={callNotes}
+                onChange={(e) => setCallNotes(e.target.value)}
+                className="w-full rounded-xl border border-border bg-muted p-3 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="Call summary..."
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-3 mt-4">
+            <Button onClick={handleLogCall}>Log Call</Button>
+            <Button variant="outline" onClick={() => setCallModal(false)}>Cancel</Button>
+          </div>
+        </Modal>
       </div>
     </AppLayout>
   );

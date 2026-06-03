@@ -1,12 +1,14 @@
 'use client';
 
+import Link from 'next/link';
 import * as React from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useAppStore } from '@/stores/app';
 import { formatCurrency, getInitials, getInlineGradient, getStageBadgeClass } from '@/lib/utils';
-import { LEADS, USERS } from '@/data';
+import { USERS } from '@/data';
 import { PIPELINE_STAGES, type Lead, type PipelineStage } from '@/types';
 import {
   Plus, Search, Filter, MoreHorizontal, MapPin,
@@ -124,7 +126,10 @@ function KanbanColumn({ stage, leads }: { stage: PipelineStage; leads: Lead[] })
 }
 
 export default function PipelinePage() {
-  const [leads, setLeads] = React.useState(LEADS);
+  const storeLeads = useAppStore((s) => s.leads);
+  const [leads, setLeads] = React.useState(storeLeads);
+
+  React.useEffect(() => { setLeads(storeLeads); }, [storeLeads]);
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const [search, setSearch] = React.useState('');
   const [filterStage, setFilterStage] = React.useState<PipelineStage | 'all'>('all');
@@ -179,10 +184,12 @@ export default function PipelinePage() {
               <Filter className="h-4 w-4" />
               Filter
             </Button>
-            <Button size="sm">
-              <Plus className="h-4 w-4" />
-              New Deal
-            </Button>
+            <Link href="/leads/new">
+              <Button size="sm">
+                <Plus className="h-4 w-4" />
+                New Deal
+              </Button>
+            </Link>
           </div>
         </div>
 
