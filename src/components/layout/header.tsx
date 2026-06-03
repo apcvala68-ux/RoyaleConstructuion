@@ -13,10 +13,15 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const { theme, toggleTheme } = useThemeStore();
+  const [mounted, setMounted] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [menuOpen, setMenuOpen] = React.useState(false);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const menuRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -94,10 +99,12 @@ export function Header({ onMenuClick }: HeaderProps) {
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
-          className="rounded-lg p-2.5 hover:bg-muted transition-colors cursor-pointer"
-          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          className="rounded-lg p-2.5 hover:bg-muted transition-colors cursor-pointer flex items-center justify-center w-9 h-9"
+          title={mounted ? `Switch to ${theme === 'dark' ? 'light' : 'dark'} mode` : 'Toggle theme'}
         >
-          {theme === 'dark' ? (
+          {!mounted ? (
+            <span className="w-4 h-4 block" />
+          ) : theme === 'dark' ? (
             <Sun className="h-4 w-4 text-muted-foreground" />
           ) : (
             <Moon className="h-4 w-4 text-muted-foreground" />

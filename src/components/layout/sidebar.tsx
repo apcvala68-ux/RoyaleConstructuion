@@ -2,16 +2,17 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/toast';
 import {
-  LayoutDashboard, Kanban, Users, Building2, Contact,
-  CheckSquare, Activity, BarChart3, FileText, Settings,
   ChevronLeft, ChevronRight, ExternalLink, LogOut,
   Lock, FileSignature, HardHat, Handshake, Tractor,
   ShoppingCart, DollarSign, Clock, Wallet, GitCompare,
   Shield, CalendarDays, ClipboardCheck,
+  LayoutDashboard, Kanban, Users, Building2, Contact,
+  CheckSquare, Activity, BarChart3, FileText, Settings,
 } from 'lucide-react';
 
 interface NavItem {
@@ -116,8 +117,14 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
     >
       {/* Logo */}
       <div className="flex items-center gap-3 h-16 px-4 border-b border-border shrink-0">
-        <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary text-primary-foreground font-bold text-sm shrink-0 shadow-sm">
-          RC
+        <div className="flex items-center justify-center w-9 h-9 rounded-xl overflow-hidden shrink-0 shadow-sm border border-border/40 bg-card">
+          <Image
+            src="/logo.png"
+            alt="Royale Construction Logo"
+            width={36}
+            height={36}
+            className="w-full h-full object-cover"
+          />
         </div>
         {!collapsed && (
           <div className="flex flex-col min-w-0">

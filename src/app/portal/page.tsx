@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { formatDate, formatCurrency, getInitials, getGradient } from '@/lib/utils';
 import { Building2, Phone, Mail, MapPin, FileText, MessageSquare, CheckCircle, Clock, ArrowLeft, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function PortalPage() {
   return (
@@ -15,7 +16,15 @@ export default function PortalPage() {
       <header className="bg-card border-b border-border">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary text-primary-foreground font-bold text-sm">RC</div>
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl overflow-hidden shrink-0 shadow-sm border border-border/40 bg-card">
+              <Image
+                src="/logo.png"
+                alt="Royale Construction Logo"
+                width={40}
+                height={40}
+                className="w-full h-full object-cover"
+              />
+            </div>
             <div>
               <h1 className="text-sm font-bold text-foreground">Royale Construction</h1>
               <p className="text-[11px] text-muted-foreground">Client Portal</p>
