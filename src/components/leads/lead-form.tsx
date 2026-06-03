@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Building2, User, GitMerge, FileText, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/toast';
 import { useAppStore } from '@/stores/app';
 import { PIPELINE_STAGES, PROJECT_TYPES, LEAD_SOURCES } from '@/types';
 import type { Lead, PipelineStage, ProjectType, LeadSource } from '@/types';
@@ -57,23 +58,22 @@ export function LeadForm({ lead }: LeadFormProps) {
       ? new Date(form.expectedCloseDate).toISOString()
       : new Date().toISOString();
 
-    await new Promise((r) => setTimeout(r, 400));
-
     if (lead) {
-      updateLead(lead.id, {
+      await updateLead(lead.id, {
         ...form,
         estimatedValue: Number(form.estimatedValue),
         probability: Number(form.probability),
         expectedCloseDate: closeDate,
       });
     } else {
-      addLead({
+      await addLead({
         ...form,
         estimatedValue: Number(form.estimatedValue),
         probability: Number(form.probability),
         expectedCloseDate: closeDate,
       });
     }
+    toast(lead ? 'Lead updated successfully' : 'Lead created successfully', 'success');
     router.push('/leads');
   };
 

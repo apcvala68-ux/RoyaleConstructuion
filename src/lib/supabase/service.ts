@@ -183,6 +183,11 @@ export const db = {
     if (error) throw error;
   },
 
+  async updateLeadStage(id: string, stage: Lead['stage']): Promise<void> {
+    const { error } = await supabase.from('leads').update({ stage, updated_at: new Date().toISOString() }).eq('id', id);
+    if (error) throw error;
+  },
+
   async createContact(data: Omit<Contact, 'id' | 'createdAt'>): Promise<Contact | null> {
     const { data: row, error } = await supabase.from('contacts').insert({
       name: data.name,

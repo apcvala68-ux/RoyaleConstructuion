@@ -22,6 +22,7 @@ interface AppState {
   addLead: (data: Omit<Lead, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Lead | null>;
   updateLead: (id: string, data: Partial<Lead>) => Promise<void>;
   deleteLead: (id: string) => Promise<void>;
+  updateLeadStage: (id: string, stage: Lead['stage']) => Promise<void>;
 
   addContact: (data: Omit<Contact, 'id' | 'createdAt'>) => Promise<Contact | null>;
   addCompany: (data: Omit<Company, 'id' | 'createdAt'>) => Promise<Company | null>;
@@ -99,6 +100,19 @@ export const useAppStore = create<AppState>((set, get) => ({
     } catch (err) {
       set({ leads: prev });
       toast(err instanceof Error ? err.message : 'Failed to delete lead', 'error');
+    }
+  },
+
+  updateLeadStage: async (id, stage) => {
+    const prev = get().leads;
+    set((s) => ({
+      leads: s.leads.map((l) => (l.id === id ? { ...l, stage } : l)),
+    }));
+    try {
+      await db.updateLeadStage(id, stage);
+    } catch (err) {
+      set({ leads: prev });
+      toast(err instanceof Error ? err.message : 'Failed to update stage', 'error');
     }
   },
 

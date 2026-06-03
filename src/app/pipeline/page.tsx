@@ -1,17 +1,21 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import * as React from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Modal } from '@/components/ui/modal';
+import { toast } from '@/components/ui/toast';
 import { useAppStore } from '@/stores/app';
 import { formatCurrency, getInitials, getInlineGradient, getStageBadgeClass } from '@/lib/utils';
 import { PIPELINE_STAGES, type Lead, type PipelineStage } from '@/types';
 import {
   Plus, Search, Filter, MoreHorizontal, MapPin,
   Calendar, DollarSign, Building2, Phone, Mail, ExternalLink,
+  Eye, Pencil, Trash2,
 } from 'lucide-react';
 import {
   DndContext,
@@ -31,13 +35,26 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-function DealCard({ lead }: { lead: Lead }) {
+function DealCard({ lead, onDelete }: { lead: Lead; onDelete: (id: string) => void }) {
+  const router = useRouter();
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const menuRef = React.useRef<HTMLDivElement>(null);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: lead.id });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+
+  React.useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    if (menuOpen) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [menuOpen]);
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
@@ -59,9 +76,25 @@ function DealCard({ lead }: { lead: Lead }) {
                 <p className="text-[11px] text-muted-foreground font-mono mt-0.5">{lead.id}</p>
               </div>
             </div>
-            <Button variant="ghost" size="icon-sm" className="shrink-0 -m-2">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
+            <div className="relative" ref={menuRef} onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" size="icon-sm" className="shrink-0 -m-2" onClick={() => setMenuOpen(!menuOpen)}>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+              {menuOpen && (
+                <div className="absolute right-0 top-full mt-1 w-40 rounded-xl border border-border bg-card shadow-lg py-1 z-50">
+                  <button className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted w-full text-left cursor-pointer" onClick={() => { setMenuOpen(false); router.push(`/leads/${lead.id}`); }}>
+                    <Eye className="h-3.5 w-3.5 text-muted-foreground" /> View Details
+                  </button>
+                  <button className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted w-full text-left cursor-pointer" onClick={() => { setMenuOpen(false); router.push(`/leads/${lead.id}/edit`); }}>
+                    <Pencil className="h-3.5 w-3.5 text-muted-foreground" /> Edit
+                  </button>
+                  <hr className="border-border mx-2" />
+                  <button className="flex items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 w-full text-left cursor-pointer" onClick={() => { setMenuOpen(false); onDelete(lead.id); }}>
+                    <Trash2 className="h-3.5 w-3.5" /> Delete
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Project */}
@@ -95,7 +128,7 @@ function DealCard({ lead }: { lead: Lead }) {
   );
 }
 
-function KanbanColumn({ stage, leads }: { stage: PipelineStage; leads: Lead[] }) {
+function KanbanColumn({ stage, leads, onDelete }: { stage: PipelineStage; leads: Lead[]; onDelete: (id: string) => void }) {
   const totalValue = leads.reduce((sum, l) => sum + l.estimatedValue, 0);
 
   return (
@@ -116,7 +149,7 @@ function KanbanColumn({ stage, leads }: { stage: PipelineStage; leads: Lead[] })
       <SortableContext items={leads.map(l => l.id)} strategy={verticalListSortingStrategy}>
         <div className="space-y-3 min-h-[200px] pt-1">
           {leads.map((lead) => (
-            <DealCard key={lead.id} lead={lead} />
+            <DealCard key={lead.id} lead={lead} onDelete={onDelete} />
           ))}
         </div>
       </SortableContext>
@@ -126,12 +159,15 @@ function KanbanColumn({ stage, leads }: { stage: PipelineStage; leads: Lead[] })
 
 export default function PipelinePage() {
   const storeLeads = useAppStore((s) => s.leads);
+  const updateLeadStage = useAppStore((s) => s.updateLeadStage);
+  const deleteLead = useAppStore((s) => s.deleteLead);
   const [leads, setLeads] = React.useState(storeLeads);
 
   React.useEffect(() => { setLeads(storeLeads); }, [storeLeads]);
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const [search, setSearch] = React.useState('');
   const [filterStage, setFilterStage] = React.useState<PipelineStage | 'all'>('all');
+  const [deleteTarget, setDeleteTarget] = React.useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -158,9 +194,23 @@ export default function PipelinePage() {
 
     const overLead = leads.find(l => l.id === over.id);
     if (overLead && overLead.stage !== activeLead.stage) {
+      updateLeadStage(activeLead.id, overLead.stage);
       setLeads(prev => prev.map(l =>
         l.id === active.id ? { ...l, stage: overLead.stage } : l
       ));
+      toast(`Deal moved to ${overLead.stage}`, 'success');
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    setDeleteTarget(id);
+  };
+
+  const confirmDelete = () => {
+    if (deleteTarget) {
+      deleteLead(deleteTarget);
+      setDeleteTarget(null);
+      toast('Deal deleted', 'success');
     }
   };
 
@@ -233,6 +283,7 @@ export default function PipelinePage() {
                 key={stage}
                 stage={stage}
                 leads={filteredLeads.filter(l => l.stage === stage)}
+                onDelete={handleDelete}
               />
             ))}
           </div>
@@ -246,6 +297,17 @@ export default function PipelinePage() {
             ) : null}
           </DragOverlay>
         </DndContext>
+
+        {/* Delete Confirmation */}
+        <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete Deal">
+          <p className="text-sm text-muted-foreground mb-4">
+            Are you sure you want to delete this deal? This action cannot be undone.
+          </p>
+          <div className="flex items-center gap-3">
+            <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+          </div>
+        </Modal>
       </div>
     </AppLayout>
   );
