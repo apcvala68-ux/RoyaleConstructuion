@@ -80,11 +80,13 @@ export interface Bid {
   submittedDate?: string;
   validUntil: string;
   items: BidItem[];
-  notes: string;
+  notes?: string;
   createdAt: string;
 }
 
 export interface BidItem {
+  id: number;
+  bidId: string;
   description: string;
   quantity: number;
   unit: string;

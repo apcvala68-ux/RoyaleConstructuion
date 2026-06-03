@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatCurrencyFull } from '@/lib/utils';
-import { LEADS, BIDS, getTotalPipelineValue, getWinRate } from '@/data';
+import { useAppStore } from '@/stores/app';
 import { PIPELINE_STAGES } from '@/types';
 import {
   BarChart3, TrendingUp, Download, Calendar,
@@ -44,10 +44,15 @@ const FORECAST_DATA = [
 
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = React.useState<'overview' | 'winloss' | 'forecast'>('overview');
+  const storeLeads = useAppStore((s) => s.leads);
 
-  const wonLeads = LEADS.filter(l => l.stage === 'Won');
-  const lostLeads = LEADS.filter(l => l.stage === 'Lost');
-  const activeDeals = LEADS.filter(l => !['Won', 'Lost'].includes(l.stage));
+  const wonLeads = storeLeads.filter(l => l.stage === 'Won');
+  const lostLeads = storeLeads.filter(l => l.stage === 'Lost');
+  const activeDeals = storeLeads.filter(l => !['Won', 'Lost'].includes(l.stage));
+  const totalPipelineValue = activeDeals.reduce((s, l) => s + l.estimatedValue, 0);
+  const closedDeals = storeLeads.filter(l => ['Won', 'Lost'].includes(l.stage));
+  const wonDeals = storeLeads.filter(l => l.stage === 'Won');
+  const winRate = closedDeals.length > 0 ? Math.round((wonDeals.length / closedDeals.length) * 100) : 0;
 
   return (
     <AppLayout>
@@ -87,7 +92,7 @@ export default function ReportsPage() {
             {/* KPIs */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: 'Win Rate', value: `${getWinRate()}%`, change: '+5%', icon: Award, color: 'text-success' },
+                { label: 'Win Rate', value: `${winRate}%`, change: '+5%', icon: Award, color: 'text-success' },
                 { label: 'Total Revenue', value: formatCurrency(wonLeads.reduce((s, l) => s + l.estimatedValue, 0)), change: '+12%', icon: DollarSign, color: 'text-primary' },
                 { label: 'Active Deals', value: String(activeDeals.length), change: `${activeDeals.length} in pipeline`, icon: Target, color: 'text-info' },
                 { label: 'Lost Deals', value: String(lostLeads.length), change: 'Review pricing', icon: AlertTriangle, color: 'text-destructive' },
@@ -168,7 +173,7 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {[...LEADS].sort((a, b) => b.estimatedValue - a.estimatedValue).slice(0, 8).map((lead) => (
+                    {[...storeLeads].sort((a, b) => b.estimatedValue - a.estimatedValue).slice(0, 8).map((lead) => (
                       <tr key={lead.id}>
                         <td className="font-medium">{lead.companyName}</td>
                         <td><Badge variant="outline" className="text-[10px]">{lead.projectType}</Badge></td>

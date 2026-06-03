@@ -10,7 +10,6 @@ import { Modal } from '@/components/ui/modal';
 import { toast } from '@/components/ui/toast';
 import { useAppStore } from '@/stores/app';
 import { formatCurrency, formatDate, getInitials, getInlineGradient, getStageBadgeClass } from '@/lib/utils';
-import { USERS } from '@/data';
 import { PIPELINE_STAGES, LEAD_SOURCES, PROJECT_TYPES, type PipelineStage } from '@/types';
 import {
   Plus, Search, Eye, Pencil, Trash2, ArrowUpDown,
@@ -32,6 +31,7 @@ export default function LeadsListPage() {
   const [deleteTarget, setDeleteTarget] = React.useState<string | null>(null);
 
   const LEADS = useAppStore((s) => s.leads);
+  const USERS = useAppStore((s) => s.users);
   const deleteLead = useAppStore((s) => s.deleteLead);
 
   const handleSort = (field: SortField) => {

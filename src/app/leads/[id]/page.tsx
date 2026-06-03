@@ -11,7 +11,6 @@ import { Modal } from '@/components/ui/modal';
 import { toast } from '@/components/ui/toast';
 import { useAppStore } from '@/stores/app';
 import { formatCurrency, formatDate, formatDateTime, timeAgo, getInitials, getGradient, getStageBadgeClass, getActivityColor } from '@/lib/utils';
-import { USERS, getBidsByLead } from '@/data';
 import { PIPELINE_STAGES, type PipelineStage, type TaskPriority } from '@/types';
 import {
   ArrowLeft, Edit, Pencil, Phone, Mail, MapPin, Calendar,
@@ -24,12 +23,16 @@ export default function LeadDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const leads = useAppStore((s) => s.leads);
+  const USERS = useAppStore((s) => s.users);
+  const allBids = useAppStore((s) => s.bids);
   const addActivity = useAppStore((s) => s.addActivity);
   const addTask = useAppStore((s) => s.addTask);
   const lead = leads.find(l => l.id === id);
-  const activities = useAppStore((s) => s.activities.filter((a) => a.leadId === id));
-  const tasks = useAppStore((s) => s.tasks.filter((t) => t.leadId === id));
-  const bids = getBidsByLead(id);
+  const allActivities = useAppStore((s) => s.activities);
+  const allTasks = useAppStore((s) => s.tasks);
+  const activities = allActivities.filter((a) => a.leadId === id);
+  const tasks = allTasks.filter((t) => t.leadId === id);
+  const bids = allBids.filter((b) => b.leadId === id);
   const [activeTab, setActiveTab] = React.useState<'activity' | 'documents' | 'notes' | 'bids' | 'history'>('activity');
   const [noteModal, setNoteModal] = React.useState(false);
   const [taskModal, setTaskModal] = React.useState(false);

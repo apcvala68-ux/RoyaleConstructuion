@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Building2, User, GitMerge, FileText, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/stores/app';
-import { USERS } from '@/data';
 import { PIPELINE_STAGES, PROJECT_TYPES, LEAD_SOURCES } from '@/types';
 import type { Lead, PipelineStage, ProjectType, LeadSource } from '@/types';
 
@@ -26,6 +25,7 @@ export function LeadForm({ lead }: LeadFormProps) {
   const router = useRouter();
   const addLead = useAppStore((s) => s.addLead);
   const updateLead = useAppStore((s) => s.updateLead);
+  const USERS = useAppStore((s) => s.users);
   const [loading, setLoading] = React.useState(false);
 
   const [form, setForm] = React.useState({

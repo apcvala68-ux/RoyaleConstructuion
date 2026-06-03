@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { timeAgo, getActivityColor } from '@/lib/utils';
-import { ACTIVITIES, USERS } from '@/data';
+import { useAppStore } from '@/stores/app';
 import { ActivityType } from '@/types';
 import { Search, Filter, Phone, Mail, Users, MapPin, FileText, CheckSquare, Clock } from 'lucide-react';
 
@@ -35,8 +35,9 @@ const getActivityIcon = (type: string) => {
 export default function ActivityPage() {
   const [filterType, setFilterType] = React.useState<ActivityType | 'all'>('all');
   const [search, setSearch] = React.useState('');
+  const activities = useAppStore((s) => s.activities);
 
-  const filtered = ACTIVITIES
+  const filtered = activities
     .filter(a => filterType === 'all' || a.type === filterType)
     .filter(a => !search || a.title.toLowerCase().includes(search.toLowerCase()) || a.leadName.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -54,7 +55,7 @@ export default function ActivityPage() {
     if (!acc[key]) acc[key] = [];
     acc[key].push(activity);
     return acc;
-  }, {} as Record<string, typeof ACTIVITIES>);
+  }, {} as Record<string, typeof activities>);
 
   return (
     <AppLayout>

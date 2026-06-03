@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/stores/app';
 import { formatCurrency, getInitials, getInlineGradient, getStageBadgeClass } from '@/lib/utils';
-import { USERS } from '@/data';
 import { PIPELINE_STAGES, type Lead, type PipelineStage } from '@/types';
 import {
   Plus, Search, Filter, MoreHorizontal, MapPin,

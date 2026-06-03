@@ -9,12 +9,12 @@ import { Modal } from '@/components/ui/modal';
 import { toast } from '@/components/ui/toast';
 import { useAppStore } from '@/stores/app';
 import { formatCurrency, getInitials, getGradient } from '@/lib/utils';
-import { COMPANIES } from '@/data';
 import { Plus, Search, Phone, Mail, Building2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 export default function ContactsPage() {
   const contacts = useAppStore((s) => s.contacts);
   const addContact = useAppStore((s) => s.addContact);
+  const companies = useAppStore((s) => s.companies);
   const [search, setSearch] = React.useState('');
   const [sortField, setSortField] = React.useState<'name' | 'company'>('name');
   const [sortDir, setSortDir] = React.useState<'asc' | 'desc'>('asc');
@@ -55,7 +55,7 @@ export default function ContactsPage() {
         <div className="page-header">
           <div>
             <h1 className="page-title">Contacts</h1>
-            <p className="page-subtitle">{filtered.length} contacts across {COMPANIES.length} companies</p>
+            <p className="page-subtitle">{filtered.length} contacts across {companies.length} companies</p>
           </div>
           <Button onClick={() => { setForm({ name: '', email: '', phone: '', company: '', role: '' }); setShowModal(true); }}><Plus className="h-4 w-4" /> Add Contact</Button>
         </div>
@@ -67,7 +67,7 @@ export default function ContactsPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map((contact) => {
-            const company = COMPANIES.find(c => c.name === contact.company);
+            const company = companies.find(c => c.name === contact.company);
             return (
               <Card key={contact.id} className="card-hover p-5">
                 <div className="flex items-start gap-3">

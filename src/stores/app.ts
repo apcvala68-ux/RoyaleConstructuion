@@ -1,13 +1,9 @@
 'use client';
 
 import { create } from 'zustand';
-import type { Lead, Contact, Company, Task, Activity } from '@/types';
-import { LEADS, CONTACTS, COMPANIES, TASKS, ACTIVITIES } from '@/data';
-
-function generateId(prefix: string): string {
-  const n = Math.floor(Math.random() * 900) + 100;
-  return `${prefix}-${n}`;
-}
+import { db } from '@/lib/supabase/service';
+import { toast } from '@/components/ui/toast';
+import type { Lead, Contact, Company, Task, Activity, User, Bid } from '@/types';
 
 interface AppState {
   leads: Lead[];
@@ -15,83 +11,178 @@ interface AppState {
   companies: Company[];
   tasks: Task[];
   activities: Activity[];
+  users: User[];
+  bids: Bid[];
+  loading: boolean;
+  error: string | null;
+  initialized: boolean;
 
-  addLead: (data: Omit<Lead, 'id' | 'createdAt' | 'updatedAt'>) => Lead;
-  updateLead: (id: string, data: Partial<Lead>) => void;
-  deleteLead: (id: string) => void;
+  init: () => Promise<void>;
 
-  addContact: (data: Omit<Contact, 'id' | 'createdAt'>) => Contact;
-  addCompany: (data: Omit<Company, 'id' | 'createdAt'>) => Company;
+  addLead: (data: Omit<Lead, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Lead | null>;
+  updateLead: (id: string, data: Partial<Lead>) => Promise<void>;
+  deleteLead: (id: string) => Promise<void>;
 
-  addTask: (data: Omit<Task, 'id' | 'createdAt'>) => Task;
-  updateTask: (id: string, data: Partial<Task>) => void;
-  deleteTask: (id: string) => void;
-  updateTaskStatus: (id: string, status: Task['status']) => void;
+  addContact: (data: Omit<Contact, 'id' | 'createdAt'>) => Promise<Contact | null>;
+  addCompany: (data: Omit<Company, 'id' | 'createdAt'>) => Promise<Company | null>;
 
-  addActivity: (data: Omit<Activity, 'id' | 'timestamp'>) => Activity;
+  addTask: (data: Omit<Task, 'id' | 'createdAt'>) => Promise<Task | null>;
+  updateTask: (id: string, data: Partial<Task>) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
+  updateTaskStatus: (id: string, status: Task['status']) => Promise<void>;
+
+  addActivity: (data: Omit<Activity, 'id' | 'timestamp'>) => Promise<Activity | null>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
-  leads: [...LEADS],
-  contacts: [...CONTACTS],
-  companies: [...COMPANIES],
-  tasks: [...TASKS],
-  activities: [...ACTIVITIES],
+  leads: [],
+  contacts: [],
+  companies: [],
+  tasks: [],
+  activities: [],
+  users: [],
+  bids: [],
+  loading: true,
+  error: null,
+  initialized: false,
 
-  addLead: (data) => {
-    const now = new Date().toISOString();
-    const lead: Lead = { id: generateId('LC'), ...data, createdAt: now, updatedAt: now };
-    set((s) => ({ leads: [lead, ...s.leads] }));
-    return lead;
+  init: async () => {
+    if (get().initialized) return;
+    set({ loading: true, error: null });
+    try {
+      const data = await db.fetchAll();
+      set({ ...data, loading: false, initialized: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load data';
+      set({ error: message, loading: false });
+      toast(message, 'error');
+    }
   },
 
-  updateLead: (id, data) => {
+  setUsers: (users: User[]) => set({ users }),
+
+  addLead: async (data) => {
+    try {
+      const lead = await db.createLead(data);
+      if (lead) {
+        set((s) => ({ leads: [lead, ...s.leads] }));
+      }
+      return lead;
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to create lead', 'error');
+      return null;
+    }
+  },
+
+  updateLead: async (id, data) => {
+    const prev = get().leads;
     set((s) => ({
-      leads: s.leads.map((l) => (l.id === id ? { ...l, ...data, updatedAt: new Date().toISOString() } : l)),
+      leads: s.leads.map((l) => (l.id === id ? { ...l, ...data } : l)),
     }));
+    try {
+      await db.updateLead(id, data);
+    } catch (err) {
+      set({ leads: prev });
+      toast(err instanceof Error ? err.message : 'Failed to update lead', 'error');
+    }
   },
 
-  deleteLead: (id) => {
+  deleteLead: async (id) => {
+    const prev = get().leads;
     set((s) => ({
       leads: s.leads.filter((l) => l.id !== id),
       activities: s.activities.filter((a) => a.leadId !== id),
       tasks: s.tasks.filter((t) => t.leadId !== id),
     }));
+    try {
+      await db.deleteLead(id);
+    } catch (err) {
+      set({ leads: prev });
+      toast(err instanceof Error ? err.message : 'Failed to delete lead', 'error');
+    }
   },
 
-  addContact: (data) => {
-    const contact: Contact = { id: generateId('CT'), ...data, createdAt: new Date().toISOString() };
-    set((s) => ({ contacts: [contact, ...s.contacts] }));
-    return contact;
+  addContact: async (data) => {
+    try {
+      const contact = await db.createContact(data);
+      if (contact) {
+        set((s) => ({ contacts: [contact, ...s.contacts] }));
+      }
+      return contact;
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to create contact', 'error');
+      return null;
+    }
   },
 
-  addCompany: (data) => {
-    const company: Company = { id: generateId('CM'), ...data, createdAt: new Date().toISOString() };
-    set((s) => ({ companies: [company, ...s.companies] }));
-    return company;
+  addCompany: async (data) => {
+    try {
+      const company = await db.createCompany(data);
+      if (company) {
+        set((s) => ({ companies: [company, ...s.companies] }));
+      }
+      return company;
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to create company', 'error');
+      return null;
+    }
   },
 
-  addTask: (data) => {
-    const task: Task = { id: generateId('TK'), ...data, createdAt: new Date().toISOString() };
-    set((s) => ({ tasks: [task, ...s.tasks] }));
-    return task;
+  addTask: async (data) => {
+    try {
+      const task = await db.createTask(data);
+      if (task) {
+        set((s) => ({ tasks: [task, ...s.tasks] }));
+      }
+      return task;
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to create task', 'error');
+      return null;
+    }
   },
 
-  updateTask: (id, data) => {
+  updateTask: async (id, data) => {
+    const prev = get().tasks;
     set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? { ...t, ...data } : t)) }));
+    try {
+      await db.updateTask(id, data);
+    } catch (err) {
+      set({ tasks: prev });
+      toast(err instanceof Error ? err.message : 'Failed to update task', 'error');
+    }
   },
 
-  deleteTask: (id) => {
+  deleteTask: async (id) => {
+    const prev = get().tasks;
     set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) }));
+    try {
+      await db.deleteTask(id);
+    } catch (err) {
+      set({ tasks: prev });
+      toast(err instanceof Error ? err.message : 'Failed to delete task', 'error');
+    }
   },
 
-  updateTaskStatus: (id, status) => {
+  updateTaskStatus: async (id, status) => {
+    const prev = get().tasks;
     set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? { ...t, status } : t)) }));
+    try {
+      await db.updateTaskStatus(id, status);
+    } catch (err) {
+      set({ tasks: prev });
+    }
   },
 
-  addActivity: (data) => {
-    const activity: Activity = { id: generateId('ACT'), ...data, timestamp: new Date().toISOString() };
-    set((s) => ({ activities: [activity, ...s.activities] }));
-    return activity;
+  addActivity: async (data) => {
+    try {
+      const activity = await db.createActivity(data);
+      if (activity) {
+        set((s) => ({ activities: [activity, ...s.activities] }));
+      }
+      return activity;
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to log activity', 'error');
+      return null;
+    }
   },
 }));

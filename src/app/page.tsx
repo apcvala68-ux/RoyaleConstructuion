@@ -7,11 +7,8 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useAppStore } from '@/stores/app';
 import { formatCurrency, timeAgo, getInitials, getGradient, getStageBadgeClass, getActivityColor } from '@/lib/utils';
-import {
-  LEADS, ACTIVITIES, TASKS,
-  getTotalPipelineValue, getWinRate, getAverageDealValue,
-} from '@/data';
 import {
   TrendingUp, TrendingDown, DollarSign, Users, Target,
   BarChart3, Clock, ArrowRight, Phone, Mail, MapPin,
@@ -51,6 +48,14 @@ const SOURCE_DATA = [
 
 export default function DashboardPage() {
   const router = useRouter();
+  const LEADS = useAppStore((s) => s.leads);
+  const ACTIVITIES = useAppStore((s) => s.activities);
+  const TASKS = useAppStore((s) => s.tasks);
+
+  const getTotalPipelineValue = () => LEADS.filter(l => !['Won', 'Lost'].includes(l.stage)).reduce((sum, l) => sum + l.estimatedValue, 0);
+  const getWinRate = () => { const closed = LEADS.filter(l => ['Won', 'Lost'].includes(l.stage)); const won = LEADS.filter(l => l.stage === 'Won'); return closed.length > 0 ? Math.round((won.length / closed.length) * 100) : 0; };
+  const getAverageDealValue = () => { const won = LEADS.filter(l => l.stage === 'Won'); return won.length > 0 ? won.reduce((sum, l) => sum + l.estimatedValue, 0) / won.length : 0; };
+
   const totalPipeline = getTotalPipelineValue();
   const winRate = getWinRate();
   const avgDeal = getAverageDealValue();

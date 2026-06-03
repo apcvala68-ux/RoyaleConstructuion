@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { toast } from '@/components/ui/toast';
 import { getInitials, getGradient } from '@/lib/utils';
-import { USERS } from '@/data';
 import { useAppStore } from '@/stores/app';
 import { TaskStatus, TaskPriority } from '@/types';
 import type { Task } from '@/types';
@@ -60,6 +59,7 @@ const selectClass = "select w-full pl-3";
 const labelClass = "label";
 
 function ViewTaskModal({ task, open, onClose }: { task: Task | null; open: boolean; onClose: () => void }) {
+  const USERS = useAppStore((s) => s.users);
   if (!task) return null;
   const assignee = USERS.find((u) => u.id === task.assignedTo);
   return (
@@ -91,6 +91,7 @@ function ViewTaskModal({ task, open, onClose }: { task: Task | null; open: boole
 
 function EditTaskModal({ task, open, onClose }: { task: Task | null; open: boolean; onClose: () => void }) {
   const updateTask = useAppStore((s) => s.updateTask);
+  const USERS = useAppStore((s) => s.users);
   const [title, setTitle] = React.useState('');
   const [description, setDescription] = React.useState('');
   const [priority, setPriority] = React.useState<TaskPriority>('medium');
@@ -192,6 +193,7 @@ interface TaskCardProps {
 }
 
 function TaskCard({ task, onView, onEdit, onDelete }: TaskCardProps) {
+  const USERS = useAppStore((s) => s.users);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
   const assignee = USERS.find(u => u.id === task.assignedTo);
