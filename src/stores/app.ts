@@ -24,6 +24,8 @@ interface AppState {
   addCompany: (data: Omit<Company, 'id' | 'createdAt'>) => Company;
 
   addTask: (data: Omit<Task, 'id' | 'createdAt'>) => Task;
+  updateTask: (id: string, data: Partial<Task>) => void;
+  deleteTask: (id: string) => void;
   updateTaskStatus: (id: string, status: Task['status']) => void;
 
   addActivity: (data: Omit<Activity, 'id' | 'timestamp'>) => Activity;
@@ -73,6 +75,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     const task: Task = { id: generateId('TK'), ...data, createdAt: new Date().toISOString() };
     set((s) => ({ tasks: [task, ...s.tasks] }));
     return task;
+  },
+
+  updateTask: (id, data) => {
+    set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? { ...t, ...data } : t)) }));
+  },
+
+  deleteTask: (id) => {
+    set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) }));
   },
 
   updateTaskStatus: (id, status) => {

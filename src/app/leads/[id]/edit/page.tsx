@@ -13,7 +13,7 @@ export default function EditLeadPage() {
   if (!lead) {
     return (
       <AppLayout>
-        <div className="p-6 max-w-4xl mx-auto">
+      <div className="p-6">
           <p className="text-muted-foreground">Lead not found.</p>
         </div>
       </AppLayout>
@@ -22,7 +22,7 @@ export default function EditLeadPage() {
 
   return (
     <AppLayout>
-      <div className="p-6 max-w-4xl mx-auto">
+      <div className="p-6">
         <LeadForm lead={lead} />
       </div>
     </AppLayout>
