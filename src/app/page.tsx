@@ -166,19 +166,21 @@ export default function DashboardPage() {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">{kpi.label}</p>
                     <p className="text-2xl font-bold text-foreground mt-2 tracking-tight">{kpi.value}</p>
-                    {kpi.change !== 0 && (
-                      <div className="flex items-center gap-1 mt-2">
-                        {kpi.change > 0 ? (
-                          <TrendingUp className="h-3.5 w-3.5 text-success" />
-                        ) : (
-                          <TrendingDown className="h-3.5 w-3.5 text-destructive" />
-                        )}
-                        <span className={`text-xs font-semibold ${kpi.change > 0 ? 'text-success' : 'text-destructive'}`}>
-                          {kpi.change > 0 ? '+' : ''}{kpi.change}%
-                        </span>
-                        <span className="text-xs text-muted-foreground">{kpi.changeLabel}</span>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1 mt-2">
+                      {kpi.change !== 0 && (
+                        <>
+                          {kpi.change > 0 ? (
+                            <TrendingUp className="h-3.5 w-3.5 text-success" />
+                          ) : (
+                            <TrendingDown className="h-3.5 w-3.5 text-destructive" />
+                          )}
+                          <span className={`text-xs font-semibold ${kpi.change > 0 ? 'text-success' : 'text-destructive'}`}>
+                            {kpi.change > 0 ? '+' : ''}{kpi.change}%
+                          </span>
+                        </>
+                      )}
+                      <span className="text-xs text-muted-foreground">{kpi.changeLabel}</span>
+                    </div>
                   </div>
                   <div className={`flex items-center justify-center w-11 h-11 rounded-xl ${kpi.iconBg}`}>
                     <kpi.icon className={`h-5 w-5 ${kpi.iconColor}`} />

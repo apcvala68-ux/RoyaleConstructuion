@@ -12,9 +12,11 @@ import { toast } from '@/components/ui/toast';
 import { useAppStore } from '@/stores/app';
 import { formatCurrency, formatDate, getInitials, getInlineGradient, getStageBadgeClass } from '@/lib/utils';
 import { PIPELINE_STAGES, LEAD_SOURCES, PROJECT_TYPES, type PipelineStage } from '@/types';
+import { downloadCsv, leadsToCsv } from '@/lib/csv-export';
 import {
   Plus, Search, Eye, Pencil, Trash2, ArrowUpDown,
   ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Copy, Check,
+  Download,
 } from 'lucide-react';
 
 type SortField = 'companyName' | 'estimatedValue' | 'stage' | 'createdAt' | 'source';
@@ -109,12 +111,18 @@ function LeadsListPage() {
             <h1 className="page-title">Leads</h1>
             <p className="page-subtitle">{filtered.length} leads • {formatCurrency(totalValue)} total value</p>
           </div>
-          <Link href="/leads/new">
-            <Button>
-              <Plus className="h-4 w-4" />
-              New Lead
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => downloadCsv(leadsToCsv(filtered), `leads-export-${new Date().toISOString().slice(0,10)}.csv`)}>
+              <Download className="h-4 w-4" />
+              Export CSV
             </Button>
-          </Link>
+            <Link href="/leads/new">
+              <Button>
+                <Plus className="h-4 w-4" />
+                New Lead
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* KPI Summary */}

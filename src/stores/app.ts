@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { db } from '@/lib/supabase/service';
 import { toast } from '@/components/ui/toast';
-import type { Lead, Contact, Company, Task, Activity, User, Bid } from '@/types';
+import type { Lead, Contact, Company, Task, Activity, User, Bid, AppNotification } from '@/types';
 
 interface AppState {
   leads: Lead[];
@@ -13,11 +13,15 @@ interface AppState {
   activities: Activity[];
   users: User[];
   bids: Bid[];
+  notifications: AppNotification[];
   loading: boolean;
   error: string | null;
   initialized: boolean;
 
   init: () => Promise<void>;
+  generateNotifications: () => void;
+  markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: () => void;
 
   addLead: (data: Omit<Lead, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Lead | null>;
   updateLead: (id: string, data: Partial<Lead>) => Promise<void>;
@@ -43,6 +47,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   activities: [],
   users: [],
   bids: [],
+  notifications: [],
   loading: true,
   error: null,
   initialized: false,
@@ -53,11 +58,97 @@ export const useAppStore = create<AppState>((set, get) => ({
     try {
       const data = await db.fetchAll();
       set({ ...data, loading: false, initialized: true });
+      get().generateNotifications();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load data';
       set({ error: message, loading: false });
       toast(message, 'error');
     }
+  },
+
+  generateNotifications: () => {
+    const { leads, tasks, bids } = get();
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const notifications: AppNotification[] = [];
+
+    // Overdue tasks
+    tasks.forEach((t) => {
+      if (t.status !== 'completed' && new Date(t.dueDate) < now) {
+        notifications.push({
+          id: `task-overdue-${t.id}`,
+          type: 'task',
+          title: 'Task overdue',
+          message: `"${t.title}" was due ${new Date(t.dueDate).toLocaleDateString()}`,
+          read: false,
+          createdAt: t.createdAt,
+          href: '/tasks',
+        });
+      }
+    });
+
+    // New leads this week
+    leads.forEach((l) => {
+      if (new Date(l.createdAt) >= oneWeekAgo) {
+        notifications.push({
+          id: `lead-new-${l.id}`,
+          type: 'lead',
+          title: 'New lead',
+          message: `${l.companyName} — ${l.projectType} project`,
+          read: false,
+          createdAt: l.createdAt,
+          href: '/pipeline',
+        });
+      }
+    });
+
+    // Bids submitted recently
+    bids.forEach((b) => {
+      if (b.submittedDate && new Date(b.submittedDate) >= oneWeekAgo) {
+        notifications.push({
+          id: `bid-submitted-${b.id}`,
+          type: 'bid',
+          title: 'Bid submitted',
+          message: `Bid for ${b.leadName} — $${b.amount.toLocaleString()}`,
+          read: false,
+          createdAt: b.submittedDate,
+          href: '/bids',
+        });
+      }
+    });
+
+    // Tasks due today
+    const todayStr = now.toISOString().slice(0, 10);
+    tasks.forEach((t) => {
+      if (t.status !== 'completed' && t.dueDate.slice(0, 10) === todayStr) {
+        notifications.push({
+          id: `task-due-today-${t.id}`,
+          type: 'task',
+          title: 'Due today',
+          message: `"${t.title}" is due today`,
+          read: false,
+          createdAt: t.createdAt,
+          href: '/tasks',
+        });
+      }
+    });
+
+    notifications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    set({ notifications });
+  },
+
+  markNotificationRead: (id) => {
+    set((s) => ({
+      notifications: s.notifications.map((n) =>
+        n.id === id ? { ...n, read: true } : n
+      ),
+    }));
+  },
+
+  markAllNotificationsRead: () => {
+    set((s) => ({
+      notifications: s.notifications.map((n) => ({ ...n, read: true })),
+    }));
   },
 
   setUsers: (users: User[]) => set({ users }),

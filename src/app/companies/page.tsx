@@ -10,7 +10,8 @@ import { Modal } from '@/components/ui/modal';
 import { toast } from '@/components/ui/toast';
 import { useAppStore } from '@/stores/app';
 import { formatCurrency, getInitials, getGradient } from '@/lib/utils';
-import { Plus, Search, Building2, Globe, Phone, Mail, MapPin, Users, DollarSign } from 'lucide-react';
+import { Plus, Search, Building2, Globe, Phone, Mail, MapPin, Users, DollarSign, Download } from 'lucide-react';
+import { downloadCsv, companiesToCsv } from '@/lib/csv-export';
 
 export default function CompaniesPage() {
   const companies = useAppStore((s) => s.companies);
@@ -46,7 +47,12 @@ export default function CompaniesPage() {
             <h1 className="page-title">Companies</h1>
             <p className="page-subtitle">{filtered.length} companies in your portfolio</p>
           </div>
-          <Button onClick={() => { setForm({ name: '', industry: '', website: '', phone: '', email: '', address: '' }); setShowModal(true); }}><Plus className="h-4 w-4" /> Add Company</Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => downloadCsv(companiesToCsv(filtered), `companies-export-${new Date().toISOString().slice(0,10)}.csv`)}>
+              <Download className="h-4 w-4" /> Export CSV
+            </Button>
+            <Button onClick={() => { setForm({ name: '', industry: '', website: '', phone: '', email: '', address: '' }); setShowModal(true); }}><Plus className="h-4 w-4" /> Add Company</Button>
+          </div>
         </div>
 
         <div className="relative max-w-sm">

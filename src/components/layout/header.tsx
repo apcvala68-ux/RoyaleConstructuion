@@ -4,8 +4,10 @@ import * as React from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useThemeStore } from '@/stores/theme';
-import { Sun, Moon, Search, Bell, Menu, ChevronDown, X, User, Settings, LogOut } from 'lucide-react';
+import { Sun, Moon, Search, Menu, ChevronDown, X, User, Settings, LogOut } from 'lucide-react';
 import { getInitials, getGradient } from '@/lib/utils';
+import { NotificationDropdown } from './notification-dropdown';
+import { SearchModal } from '@/components/search/search-modal';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -14,29 +16,12 @@ interface HeaderProps {
 export function Header({ onMenuClick }: HeaderProps) {
   const { theme, toggleTheme } = useThemeStore();
   const [mounted, setMounted] = React.useState(false);
-  const [searchQuery, setSearchQuery] = React.useState('');
   const [menuOpen, setMenuOpen] = React.useState(false);
-  const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const [searchOpen, setSearchOpen] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     setMounted(true);
-  }, []);
-
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key?.toLowerCase() === 'k') {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-      if (e.key === 'Escape') {
-        setSearchQuery('');
-        setMenuOpen(false);
-        searchInputRef.current?.blur();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   React.useEffect(() => {
@@ -61,33 +46,13 @@ export function Header({ onMenuClick }: HeaderProps) {
       </button>
 
       {/* Search */}
-      <div className="relative flex-1 lg:max-w-sm hidden lg:block">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          ref={searchInputRef}
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search leads, companies..."
-          className="input w-full h-9 pl-10 pr-20 text-sm"
-        />
-        {searchQuery ? (
-          <button
-            onClick={() => { setSearchQuery(''); searchInputRef.current?.focus(); }}
-            className="absolute right-10 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-muted/50 text-muted-foreground/60 hover:text-foreground transition-colors"
-            title="Clear search"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        ) : null}
-        <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 hidden lg:inline-flex h-5 select-none items-center gap-0.5 rounded border border-border/50 bg-muted/50 px-1.5 font-mono text-[9px] font-medium text-muted-foreground/80">
-          <span className="text-[10px]">⌘</span>K
-        </kbd>
+      <div className="flex-1 lg:max-w-sm hidden lg:block">
+        <SearchModal externalOpen={searchOpen} onOpenChange={setSearchOpen} />
       </div>
 
       {/* Mobile Search */}
       <button
-        onClick={onMenuClick}
+        onClick={() => setSearchOpen(true)}
         className="lg:hidden rounded-lg p-2.5 hover:bg-muted transition-colors"
         title="Search"
       >
@@ -112,10 +77,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         </button>
 
         {/* Notifications */}
-        <button className="relative rounded-lg p-2.5 hover:bg-muted transition-colors cursor-pointer">
-          <Bell className="h-4 w-4 text-muted-foreground" />
-          <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-card" />
-        </button>
+        <NotificationDropdown />
 
         {/* Divider */}
         <div className="w-px h-6 bg-border mx-1" />

@@ -104,6 +104,18 @@ export interface User {
   lastActive: string;
 }
 
+export type NotificationType = 'lead' | 'task' | 'bid' | 'activity' | 'system';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+  href?: string;
+}
+
 export interface KPIData {
   label: string;
   value: string;
