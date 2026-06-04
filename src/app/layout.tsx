@@ -4,18 +4,28 @@ import { ToastContainerWrapper } from '@/components/ui/toast-wrapper';
 import { StoreInitializerWrapper } from '@/components/layout/init-wrapper';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://royale-constructuion.vercel.app'),
   title: "Royale Construction Company's CRM",
   description: "Royale Construction Company's CRM - Pipeline, Leads, Bids & Project Management",
   openGraph: {
-    title: "Royale Construction Company's CRM",
+    title: "Royale Construction CRM",
     description: "Streamline construction projects, pipeline, leads, bids, and client communication.",
     type: 'website',
     siteName: 'Royale Construction CRM',
+    images: [
+      {
+        url: '/opengraph-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Royale Construction CRM',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: "Royale Construction Company's CRM",
+    title: "Royale Construction CRM",
     description: "Streamline construction projects, pipeline, leads, bids, and client communication.",
+    images: ['/opengraph-image.png'],
   },
 };
 
